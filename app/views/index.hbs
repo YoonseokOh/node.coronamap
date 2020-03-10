@@ -128,9 +128,8 @@
         // Create and send a GET request
         // The first argument is the post type (GET, POST, PUT, DELETE, etc.)
         // The second argument is the endpoint URL
-        xhr.open('GET', 'https://8oi9s0nnth.apigw.ntruss.com/corona19-masks/v1/storesByAddr/json?address=경기도 수원시 영통구');
+        xhr.open('GET', 'https://8oi9s0nnth.apigw.ntruss.com/corona19-masks/v1/storesByAddr/json?address=' + address);
         xhr.send();
-
 
         function updateMarkers(map, markers) {
             var mapBounds = map.getBounds();
