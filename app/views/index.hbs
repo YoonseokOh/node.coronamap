@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html xml:lang="ko" lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no">
+    <title>마스크 재고 표시 :: yoonseokoh.com</title>
+    <script type="text/javascript" src="https://openapi.map.naver.com/openapi/v3/maps.js?ncpClientId=3asvwe1edg"></script>
+</head>
+
+<body>
+<div>YoonseokOh Mask map</div>
+
+<div id="map" style="width:100%;height:800px;"></div>
+
+<script>
+    var HOME_PATH = window.HOME_PATH || '.';
+    var MARKER_SPRITE_POSITION = [];
+    var xhr = new XMLHttpRequest();
+    var markers = [];
+    var infoWindows = [];
+    var map;
+    var urlParams = new URLSearchParams(window.location.search);
+    var address = urlParams.get('address');
+    console.log(address);
+
+    if (address) {
+        // 해당 마커의 인덱스를 seq라는 클로저 변수로 저장하는 이벤트 핸들러를 반환합니다.
+        function getClickHandler(seq) {
+            return function(e) {
+                var marker = markers[seq];
+                var infoWindow = infoWindows[seq];
+
+                if (infoWindow.getMap()) {
+                    infoWindow.close();
+                } else {
+                    infoWindow.open(map, marker);
+                }
+            }
+        }
+
+        xhr.onload = function () {
+            if (xhr.status >= 200 && xhr.status < 300) {
+                var data = JSON.parse(xhr.response);
+                var center = {
+                    lat: 37.3595704,
+                    lng: 127.105399
+                };
+                var stores = [];
+
+                console.log('data');
+                console.log(data);
+
+                if (data.count > 0) {
+                    center.lat = 0;
+                    center.lng = 0;
+
+                    for (var i = 0; i < data.count; i++) {
+                        var store = data.stores[i];
+                        center.lat += store.lat;
+                        center.lng += store.lng;
+                    }
+                    center.lat = center.lat / data.count;
+                    center.lng = center.lng / data.count;
+                }
+
+                map = new naver.maps.Map('map', {
+                    center: new naver.maps.LatLng(center.lat, center.lng),
+                    zoom: 13
+                });
+
+                for (i in data.stores) {
+                    store = data.stores[i];
+
+                    var url = HOME_PATH +'/img/white.png';
+                    if (store.remain_stat) {
+                        if (store.remain_stat == 'plenty') {
+                            url = HOME_PATH +'/img/green.png';
+                        } else if (store.remain_stat == 'some') {
+                            url = HOME_PATH +'/img/yellow.png';
+                        } else if (store.remain_stat == 'few') {
+                            url = HOME_PATH +'/img/red.png';
+                        } else if (store.remain_stat == 'empty') {
+                            url = HOME_PATH + '/img/gray.png';
+                        }
+                    }
+
+                    var marker = new naver.maps.Marker({
+                        map: map,
+                        position: new naver.maps.LatLng(store.lat, store.lng),
+                        title: store.name,
+                        icon: {
+                            url: url,
+                            scaledSize: new naver.maps.Size(24, 28),
+                            anchor: new naver.maps.Point(12, 14),
+                            origin: new naver.maps.Point([0,0], [0,0])
+                        },
+                        zIndex: 100
+                    });
+
+
+                    var infoWindow = new naver.maps.InfoWindow({
+                        content: '<div style="width:150px;text-align:center;padding:10px;">' + store.name + ' | ' + store.addr + '</div>'
+                    });
+
+                    markers.push(marker);
+                    infoWindows.push(infoWindow);
+                }
+
+                for (var i=0, ii=markers.length; i<ii; i++) {
+                    naver.maps.Event.addListener(markers[i], 'click', getClickHandler(i));
+                }
+
+                naver.maps.Event.addListener(map, 'idle', function() {
+                    updateMarkers(map, markers);
+                });
+
+            } else {
+                // What do when the request fails
+                console.log('The request failed!');
+            }
+
+            // Code that should run regardless of the request status
+            console.log('This always runs...');
+        };
+
+        // Create and send a GET request
+        // The first argument is the post type (GET, POST, PUT, DELETE, etc.)
+        // The second argument is the endpoint URL
+        xhr.open('GET', 'https://8oi9s0nnth.apigw.ntruss.com/corona19-masks/v1/storesByAddr/json?address=경기도 수원시 영통구');
+        xhr.send();
+
+
+        function updateMarkers(map, markers) {
+            var mapBounds = map.getBounds();
+            var marker, position;
+
+            for (var i = 0; i < markers.length; i++) {
+
+                marker = markers[i];
+                position = marker.getPosition();
+
+                if (mapBounds.hasLatLng(position)) {
+                    showMarker(map, marker);
+                } else {
+                    hideMarker(map, marker);
+                }
+            }
+        }
+
+        function showMarker(map, marker) {
+            if (marker.setMap()) return;
+            marker.setMap(map);
+        }
+
+        function hideMarker(map, marker) {
+            if (!marker.setMap()) return;
+            marker.setMap(null);
+        }
+    }
+</script>
+</body>
+</html>
