@@ -50,22 +50,36 @@
                 console.log(data);
 
                 if (data.count > 0) {
+                    count = 0;
                     center.lat = 0;
                     center.lng = 0;
 
                     for (var i = 0; i < data.count; i++) {
                         var store = data.stores[i];
-                        center.lat += store.lat;
-                        center.lng += store.lng;
+                        if (store.lat && store.lng) {
+                            center.lat += store.lat;
+                            center.lng += store.lng;
+                            count += 1;
+                        }
                     }
-                    center.lat = center.lat / data.count;
-                    center.lng = center.lng / data.count;
+                    if (count > 0) {
+                        center.lat = center.lat / count;
+                        center.lng = center.lng / count;
+                    }
                 }
 
-                map = new naver.maps.Map('map', {
-                    center: new naver.maps.LatLng(center.lat, center.lng),
-                    zoom: 13
-                });
+                console.log(center)
+
+                if (center.lat && center.lng) {
+                    map = new naver.maps.Map('map', {
+                        center: new naver.maps.LatLng(center.lat, center.lng),
+                        zoom: 13
+                    });
+                } else {
+                    map = new naver.maps.Map('map', {
+                        zoom: 13
+                    });
+                }
 
                 for (i in data.stores) {
                     store = data.stores[i];
